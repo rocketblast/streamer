@@ -8,7 +8,7 @@ html::before {
   bottom: 0;
   right: 0;
   left: 0;
-  background: black url(http://www.insideoutmalta.com/img/concrete_wall/9.jpg) no-repeat scroll 50% top;
+  background: black url(https://media3.giphy.com/media/4ZrIbkOYvm8Cqfm3xu/giphy.gif) no-repeat scroll 50% top;
   opacity: .2;
   z-index: -1;
   filter: blur(2px);
