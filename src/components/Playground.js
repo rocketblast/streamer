@@ -26,7 +26,7 @@ class Playground extends Component {
                         boxSizing: 'border-box',
                         background: '',
                         width: '27%',
-                        paddingLeft: '2%',
+                        paddingLeft: '4%',
                         paddingRight: '6%',
                         display: 'flex',
                         flexDirection: 'column',
