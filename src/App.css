@@ -8,7 +8,7 @@ html::before {
   bottom: 0;
   right: 0;
   left: 0;
-  background: black url(https://thumbs.gfycat.com/IllinformedFaintAuklet-size_restricted.gif) no-repeat scroll 50% top;
+  background: black url(https://i.imgur.com/ctvpb0z.gif) no-repeat scroll 50% top;
   opacity: .25;
   z-index: -1;
   filter: blur(2px);
@@ -16,7 +16,7 @@ html::before {
 }
 
 .App {
-  text-align: center;
+  // text-align: center;
 }
 
 .App-logo {

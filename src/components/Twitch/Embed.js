@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 
 import { getId, useChannel, useVideo, useCollection } from './Utils';
 
-import './Common.css';
+import './IFrame.css';
 
 // const useChat = ({ layout }) => layout !== 'video';
 
