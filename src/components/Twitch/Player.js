@@ -26,20 +26,29 @@ class TwitchPlayer extends Component {
             ...((useChannel(this.props) && { channel }) || (!useVideo(this.props) && { channel: 'monstercat' }) || {}),
             ...(useVideo(this.props) ? { video } : {}),
             ...(useCollection(this.props) ? { collection } : {}),
+            // autoplay: false,
         };
 
         const player = new Twitch.Player(id, options);
         
         if (isLessImportant(this.props)) player.setMuted(true);
+        // player.setVolume(0.1);
 
         player.addEventListener(Twitch.Player.PLAYING, once(() => {
             // setTimeout(() => player.pause(), 5000);
             if (isLessImportant(this.props)) setLowestQuality(player);
 
-            console.log(player, player.getQualities());
+            console.log('PLAYING', player, player.getQualities(), player.getChannel(), player.getPlaybackStats(), arguments);
         }));
 
-        // player.setVolume(0.1);
+        player.addEventListener(Twitch.Player.ONLINE, () => {
+            console.log('ONLINE', player.getChannel(), arguments)
+            // went online again (if it has not been swapped out before)
+        });
+        player.addEventListener(Twitch.Player.OFFLINE, () => {
+            console.log('OFFLINE', player.getChannel(), arguments)
+            // went offline, load (possible) other live channel, toaster
+        });
     }
 
     render() {
@@ -49,7 +58,12 @@ class TwitchPlayer extends Component {
             paddingBottom: `${ (9 / 16 * 100).toFixed(2) }%`,
         }
 
-        return <div className="root" style={ styles } id={id}/>;
+        return (
+            <div style={ { position: 'relative' } }>
+                <div className="root" style={ styles } id={id}/>
+                <div style={ { position: 'absolute', top: '100%', color: 'silver', paddingTop: 5 } }>&nbsp;( &nbsp; ) <strong style={ { color: 'white', fontWeight: 'normal' } }>Channel</strong> Title</div>
+            </div>
+        );
     }
 }
 
