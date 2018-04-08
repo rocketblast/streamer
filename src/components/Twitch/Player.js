@@ -114,59 +114,49 @@ class TwitchPlayer extends Component {
         if (status) {
             const isPaused = player.isPaused()
 
-            isPaused
-                ? player.play()
-                : player.pause();
-
-            const nextStatus = isPaused
-                ? 'playing'
-                : 'paused';
-
-            this.setState({
-                status: nextStatus
-            })
+            if (isPaused) {
+                player.play()
+                this.setState({
+                    pastIntro: false,
+                    status: 'playing',
+                })
+                setTimeout(() => this.setState({ pastIntro: 'playing' }), TWITCH_PLAYING_INTRO_DELAY);
+            } else {
+                setTimeout(() => player.pause(), 2000);
+                this.setState({ status: 'paused' });
+                // Should probably add another status for "will pause", "will play" etc in order to handle transitions and i.e. button state separately
+            }
         }
     }
 
     render() {
         const { id, isLessImportant, user: { display_name: name, offline_image_url: offlineURL } = {}, status, pastIntro } = this.state;
-
         // The offlineURL supports different size, but defaults to a rather high 1920 version, fix this.
-
-        let overlay = {
-            backgroundColor: '#111',
-            color: 'white',
-            fontSize: isLessImportant
-                ? 'x-small'
-                : 'small',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-        };
-
-        if (pastIntro) {
-            overlay = {
-                ...overlay,
-                backgroundColor: 'transparent'
-            };
-        } else if (offlineURL) {
-            overlay = {
-                ...overlay,
-                backgroundImage: `url(${ offlineURL })`,
-                backgroundSize: 'cover'
-            };
-        }
-
 
         const styles = {
             paddingBottom: `${ (9 / 16 * 100).toFixed(2) }%`,
+        }
+
+        const overlay = {
+            ...(isLessImportant ? { fontSize: 'x-small' } : {}),
+            ...(pastIntro && status === 'playing' ? { opacity: 0 } : {}),
+        };
+
+        const overlayPoster = {
+            backgroundImage: `url(${ offlineURL })`,
+        };
+
+        const overlayBackground = {
+            ...(offlineURL ? { background: 'transparent' } : {}),
         }
 
         return (
             <div style={ { position: 'relative' } }>
                 <div className="root" style={ styles } id={ id }>
                     <div className="overlay" style={ overlay } ref={ this.overlay }>
-                        { status === 'playing' && !pastIntro && <div style={ { background: 'rgba(0, 0, 0, .7)', padding: 5 } }>Starting soon...</div> }
+                        { offlineURL && <div className="overlay__cover" style={ overlayPoster } /> }
+                        <div className="overlay__background" style={ overlayBackground } />
+                        { status === 'playing' && !pastIntro && <div style={ { zIndex: 1, background: 'rgba(0, 0, 0, .7)', padding: 5 } }>Starting soon...</div> }
                     </div>
                 </div>
                 <div style={ {

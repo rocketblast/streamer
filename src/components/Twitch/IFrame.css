@@ -12,7 +12,29 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
+    z-index: 10;
+    color: white;
+    font-size: small;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 2s ease-in-out;
+}
+
+.overlay__cover {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+}
+
+.overlay__background {
+    position: absolute;
+    background-color: #111;
+    transition: background 2s ease-in-out;
+    width: 100%;
+    height: 100%;
 }
 
 .root iframe {
