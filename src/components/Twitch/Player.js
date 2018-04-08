@@ -4,10 +4,13 @@ import React, { Component, createRef } from 'react';
 import { getId, isLessImportant, useChannel, useVideo, useCollection, setLowestQuality, once } from './Utils';
 
 import AuthorizationContext from './AuthorizationContext.js';
+import Icon from '../Icons';
 
 import './IFrame.css';
 
 // https://dev.twitch.tv/docs/embed/#embedding-video-and-clips
+
+const TWITCH_PLAYING_INTRO_DELAY = 6000;
 
 const fetchUser = (login, { token }) => fetch(`https://api.twitch.tv/helix/users?login=${ login }`, {
     headers: {
@@ -24,7 +27,7 @@ class TwitchPlayer extends Component {
 
         const { channel, video, collection } = props;
 
-        this.ref = createRef();
+        this.overlay = createRef();
 
         this.state = {
             id: getId('player')(props),
@@ -84,6 +87,10 @@ class TwitchPlayer extends Component {
                 status: 'playing'
             })
 
+            setTimeout(() => this.setState({
+                pastIntro: true
+            }), TWITCH_PLAYING_INTRO_DELAY)
+
             console.log('PLAYING', player.isPaused(), player, player.getQualities(), player.getChannel(), player.getPlaybackStats(), arguments);
         }));
 
@@ -122,7 +129,34 @@ class TwitchPlayer extends Component {
     }
 
     render() {
-        const { id, isLessImportant, user: { display_name: name } = {}, status } = this.state;
+        const { id, isLessImportant, user: { display_name: name, offline_image_url: offlineURL } = {}, status, pastIntro } = this.state;
+
+        // The offlineURL supports different size, but defaults to a rather high 1920 version, fix this.
+
+        let overlay = {
+            backgroundColor: '#111',
+            color: 'white',
+            fontSize: isLessImportant
+                ? 'x-small'
+                : 'small',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        };
+
+        if (pastIntro) {
+            overlay = {
+                ...overlay,
+                backgroundColor: 'transparent'
+            };
+        } else if (offlineURL) {
+            overlay = {
+                ...overlay,
+                backgroundImage: `url(${ offlineURL })`,
+                backgroundSize: 'cover'
+            };
+        }
+
 
         const styles = {
             paddingBottom: `${ (9 / 16 * 100).toFixed(2) }%`,
@@ -130,7 +164,11 @@ class TwitchPlayer extends Component {
 
         return (
             <div style={ { position: 'relative' } }>
-                <div className="root" style={ styles } id={ id } ref={ this.ref } />
+                <div className="root" style={ styles } id={ id }>
+                    <div className="overlay" style={ overlay } ref={ this.overlay }>
+                        { status === 'playing' && !pastIntro && <div style={ { background: 'rgba(0, 0, 0, .7)', padding: 5 } }>Starting soon...</div> }
+                    </div>
+                </div>
                 <div style={ {
                     position: 'absolute',
                     top: '100%',
@@ -149,8 +187,8 @@ class TwitchPlayer extends Component {
                         { !isLessImportant && name && <div>Title</div> }
                     </div>
                     { status && (
-                        (status === 'paused' && <a onClick={ this.handleClick }>play</a>)
-                        || (status === 'playing' && <a onClick={ this.handleClick }>pause</a>) 
+                        (status === 'paused' && <a onClick={ this.handleClick }><Icon name="play" style={ { width: isLessImportant ? 15 : 20, height: isLessImportant ? 15 : 20, fill: 'gray' } }/></a>)
+                        || (status === 'playing' && <a onClick={ this.handleClick }><Icon name="pause" style={ { width: isLessImportant ? 15 : 20, height: isLessImportant ? 15 : 20, fill: 'gray' } }/></a>) 
                         || (status === 'offline' && 'offline')) }
                 </div>
             </div>

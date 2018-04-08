@@ -5,7 +5,7 @@
     max-width: 100%;
 }
 
-.root::before {
+.overlay {
     content: ' ';
     position: absolute;
     top: 0;
