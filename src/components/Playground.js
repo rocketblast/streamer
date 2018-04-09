@@ -3,12 +3,15 @@ import React, { Component } from 'react';
 import AuthorizationContext from './Twitch/AuthorizationContext.js';
 // import TwitchChat from './Twitch/IFrameChat';
 import TwitchPlayer from './Twitch/Player';
+import Icon from './Icons';
 
 class Playground extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {};
+        this.state = {
+            main: 'monstercat',
+        };
     }
 
     componentDidMount() {
@@ -22,13 +25,17 @@ class Playground extends Component {
     }
 
     render() {
+        const { main } = this.state;
+
+        console.log(main)
+
         return (
             <div>
                 <div id="ad" style={ { height: 160, background: 'rgba(0, 0, 0, .2)' } }></div>
                 <AuthorizationContext.Provider value={ this.state.token }>
                     <div style={ { display: 'flex', paddingTop: 50 } }>
                         <div style={ { boxSizing: 'border-box', background: '', width: '73%', paddingLeft: '6%' } }>
-                            <TwitchPlayer channel="monstercat" />
+                            <TwitchPlayer channel={ main } />
                         </div>
                         <div style={ {
                             boxSizing: 'border-box',
@@ -47,6 +54,7 @@ class Playground extends Component {
                         {/*<TwitchChat />*/}
                     </div>
                 </AuthorizationContext.Provider>
+                <div style={ { position: 'fixed', top: 50, left: '6%', width: 60, height: 60, fill: 'rgba(255, 255, 255, .2)' } } onClick={ () => this.setState({ main: 'rocketblasttv' }) }><Icon name="rocketblast"/></div>
             </div>
         );
     }

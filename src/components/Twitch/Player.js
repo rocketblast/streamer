@@ -10,14 +10,14 @@ import './IFrame.css';
 
 // https://dev.twitch.tv/docs/embed/#embedding-video-and-clips
 
-const TWITCH_PLAYING_INTRO_DELAY = 6000;
+const TWITCH_PLAYING_INTRO_DELAY = 6000; // Not a fixed number, if there is delay in the streams it is usually a bit longer...
 
 const fetchUser = (login, { token }) => fetch(`https://api.twitch.tv/helix/users?login=${ login }`, {
     headers: {
         'Authorization': `Bearer ${ token }`
     }
 })
-    .then(response =>response.json())
+    .then(response => response.json())
     .then(data => data.data.find(user => user.login === login));
 
 
@@ -25,22 +25,34 @@ class TwitchPlayer extends Component {
     constructor(props) {
         super(props);
 
-        const { channel, video, collection } = props;
-
         this.overlay = createRef();
 
         this.state = {
             id: getId('player')(props),
-            options: {
-                width: '100%',
-                height: '100%',
-                ...((useChannel(props) && { channel }) || (!useVideo(props) && { channel: 'monstercat' }) || {}),
-                ...(useVideo(props) ? { video } : {}),
-                ...(useCollection(props) ? { collection } : {}),
-                // autoplay: false,
-            },
             isLessImportant: isLessImportant(props)
         };
+    }
+
+    static getDerivedStateFromProps(nextProps, prevState) {
+        if (!prevState.user || (prevState.user && prevState.user.login && prevState.user.login !== nextProps.channel)) {
+            const { channel, video, collection } = nextProps;
+            
+            return ({
+                options: {
+                    width: '100%',
+                    height: '100%',
+                    ...((useChannel(nextProps) && { channel }) || (!useVideo(nextProps) && { channel: 'monstercat' }) || {}),
+                    ...(useVideo(nextProps) ? { video } : {}),
+                    ...(useCollection(nextProps) ? { collection } : {}),
+                    // autoplay: false,
+                },
+                status: undefined,
+                pastIntro: false,
+                user: undefined
+            })
+        }
+        
+        return null;
     }
 
     componentDidUpdate() {
@@ -50,62 +62,48 @@ class TwitchPlayer extends Component {
         if (!user && token) {
             fetchUser(channel, { token })
                 .then(user => {
-                    console.log(user);
-                    this.setState({ user })
-                });
+                    const { player: prevPlayer, id, options, isLessImportant } = this.state;
+
+                    let player;
+
+                    if (prevPlayer) {
+                        setTimeout(() => prevPlayer.setChannel(channel), 2000);
+                    } else {
+                        player = new Twitch.Player(id, options);
+
+                        if (isLessImportant) player.setMuted(true);
+
+                        player.addEventListener(Twitch.Player.READY, () => {
+                            // console.log('READY', player.isPaused())
+                        });
+
+                        player.addEventListener(Twitch.Player.ONLINE, () => {
+                            this.setState({ status: 'playing' })
+
+                            setTimeout(() => this.setState({ pastIntro: true }), TWITCH_PLAYING_INTRO_DELAY)
+
+                            // console.log('ONLINE', player.isPaused(), player.getQualities(), player.getChannel(), arguments, player.getPlaybackStats())
+                        });
+
+                        player.addEventListener(Twitch.Player.OFFLINE, () => {
+                            this.setState({ status: 'offline' })
+
+                            // console.log('OFFLINE', player.getChannel(), arguments)
+                        });
+
+                        player.addEventListener(Twitch.Player.PLAYING, once(() => {
+                            if (isLessImportant) setLowestQuality(player);
+
+                            // console.log('PLAYING', player.isPaused(), player, player.getQualities(), player.getChannel(), player.getPlaybackStats(), arguments);
+                        }));
+                    }
+
+                    this.setState({
+                        user,
+                        ...(player ? { player } : {}),
+                    });
+                })
         }
-    }
-
-    componentDidMount() {
-        const { channel, video, collection } = this.props;
-        const { id, options, isLessImportant } = this.state;
-
-        const player = new Twitch.Player(id, options);
-
-        this.setState({
-            player,
-        });
-        
-        if (isLessImportant) player.setMuted(true);
-        // player.setVolume(0.1);
-
-        player.addEventListener(Twitch.Player.READY, () => {
-            // These are big no-no's because everyone cares about security
-            // I can however get the "offline" image from the API and replace the iframe with just that instead
-            //
-            // const node = this.ref.current;
-            // console.log(player._bridge._iframe.contentWindow)
-            // node.querySelector('iframe').contentWindow.document.body.querySelector('.hover-display').style.display//; = 'none';
-            console.log('READY', player.isPaused())
-        });
-
-        player.addEventListener(Twitch.Player.PLAYING, once(() => {
-            // setTimeout(() => player.pause(), 5000);
-            if (isLessImportant) setLowestQuality(player);
-
-            this.setState({
-                status: 'playing'
-            })
-
-            setTimeout(() => this.setState({
-                pastIntro: true
-            }), TWITCH_PLAYING_INTRO_DELAY)
-
-            console.log('PLAYING', player.isPaused(), player, player.getQualities(), player.getChannel(), player.getPlaybackStats(), arguments);
-        }));
-
-        player.addEventListener(Twitch.Player.ONLINE, () => {
-            console.log('ONLINE', player.isPaused(), player.getChannel(), arguments)
-            // went online again (if it has not been swapped out before)
-        });
-        player.addEventListener(Twitch.Player.OFFLINE, () => {
-            console.log('OFFLINE', player.getChannel(), arguments)
-            // went offline, load (possible) other live channel, toaster
-
-            this.setState({
-                status: 'offline'
-            })
-        });
     }
 
     handleClick = () => {
@@ -116,13 +114,16 @@ class TwitchPlayer extends Component {
 
             if (isPaused) {
                 player.play()
+
                 this.setState({
-                    pastIntro: false,
                     status: 'playing',
+                    pastIntro: false,
                 })
-                setTimeout(() => this.setState({ pastIntro: 'playing' }), TWITCH_PLAYING_INTRO_DELAY);
+
+                setTimeout(() => this.setState({ pastIntro: true }), TWITCH_PLAYING_INTRO_DELAY);
             } else {
                 setTimeout(() => player.pause(), 2000);
+
                 this.setState({ status: 'paused' });
                 // Should probably add another status for "will pause", "will play" etc in order to handle transitions and i.e. button state separately
             }
