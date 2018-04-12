@@ -1,5 +1,6 @@
 html {
   background-color: black;
+  color: white;
 }
 html::before {
   content: " ";
