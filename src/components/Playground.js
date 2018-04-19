@@ -1,9 +1,13 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+
+import { addChannel } from '../actions/channels-actions';
 
 import AuthorizationContext from './Twitch/AuthorizationContext.js';
 // import TwitchChat from './Twitch/IFrameChat';
 import TwitchPlayer from './Twitch/Player';
 import Icon from './Icons';
+import Typewriter from './Typewriter';
 
 class Playground extends Component {
     constructor(props) {
@@ -22,6 +26,10 @@ class Playground extends Component {
             .then(data => this.setState({
                 token: data,
             }));
+    }
+
+    handleReturn = (text) => {
+        this.props.dispatch(addChannel(text));
     }
 
     render() {
@@ -55,9 +63,10 @@ class Playground extends Component {
                     </div>
                 </AuthorizationContext.Provider>
                 <div style={ { position: 'fixed', top: 50, left: '6%', width: 60, height: 60, fill: 'rgba(255, 255, 255, .2)' } } onClick={ () => this.setState({ main: 'rocketblasttv' }) }><Icon name="rocketblast"/></div>
+                <Typewriter onReturn={ this.handleReturn }/>
             </div>
         );
     }
 }
 
-export default Playground;
+export default connect()(Playground);
